@@ -1,0 +1,27 @@
+# Server Monitoring Configuration
+
+servers:
+  - name: "Local Server"
+    host: "localhost"
+    username: "your_username"
+    port: 22
+    key_file: "~/.ssh/id_rsa"
+    
+  - name: "GPU Server 1"
+    host: "192.168.1.100"
+    username: "your_username"
+    port: 22
+    key_file: "~/.ssh/id_rsa"
+    
+  - name: "GPU Server 2"
+    host: "192.168.1.101"
+    username: "your_username"
+    port: 22
+    key_file: "~/.ssh/id_rsa"
+
+# Add more servers as needed
+# - name: "Server Name"
+#   host: "IP_ADDRESS_OR_HOSTNAME"
+#   username: "SSH_USERNAME"
+#   port: 22
+#   key_file: "~/.ssh/id_rsa"

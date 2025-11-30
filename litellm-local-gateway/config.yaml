@@ -1,0 +1,45 @@
+model_list:
+  # --- vLLM Models (LOCAL) ---
+  - model_name: gpt-oss-20b
+    litellm_params:
+      model: openai/gpt-oss-20b
+      api_base: http://localhost:13080/v1
+      api_key: EMPTY
+
+  # --- Ollama Models (LOCAL) ---
+  - model_name: phi4:14b
+    litellm_params:
+      model: ollama/phi4:14b
+      api_base: http://localhost:11434
+
+  - model_name: qwen2.5:7b
+    litellm_params:
+      model: ollama/qwen2.5:7b
+      api_base: http://localhost:11434
+
+  # --- Additional Ollama Servers (OPTIONAL) ---
+  # Uncomment if running multiple Ollama instances on different ports
+  # - model_name: llama3.1:8b
+  #   litellm_params:
+  #     model: ollama/llama3.1:8b
+  #     api_base: http://localhost:11435
+
+  # - model_name: mistral:7b
+  #   litellm_params:
+  #     model: ollama/mistral:7b
+  #     api_base: http://192.168.1.100:11434  # Remote Ollama server
+
+# LiteLLM proxy configuration
+litellm_settings:
+  # Disable telemetry for privacy
+  telemetry: false
+  # Enable Prometheus metrics
+  callbacks: ["prometheus"]
+  
+  # Security (RECOMMENDED for production)
+  # master_key: "your-secret-master-key"
+
+# Router settings
+router_settings:
+  # Enable web UI at http://localhost:4000
+  enable_ui: true

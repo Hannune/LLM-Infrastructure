@@ -1,0 +1,31 @@
+# Local LLM Infrastructure - Root Dependencies
+#
+# This file contains common dependencies shared across components.
+# For component-specific dependencies, see each component's requirements.txt
+
+# =============================================================================
+# Core LLM Integration
+# =============================================================================
+langchain>=0.1.0
+langchain-ollama>=0.0.1
+
+# =============================================================================
+# Environment & Configuration
+# =============================================================================
+python-dotenv>=1.0.0
+
+# =============================================================================
+# HTTP & API
+# =============================================================================
+requests>=2.31.0
+
+# =============================================================================
+# Component-Specific Installation
+# =============================================================================
+# To install a specific component:
+#
+#   cd ollama-fleet-manager && pip install -r requirements.txt
+#   cd litellm-local-gateway && pip install -r requirements.txt
+#   cd ollama-production-docker && pip install -r requirements.txt
+#   cd multi-server-monitoring-dashboard && pip install -r requirements.txt
+#   cd vllm-gptq-marlin-optimization && pip install -r requirements.txt
