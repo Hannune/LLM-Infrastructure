@@ -259,8 +259,8 @@ Built with:
 
 ## 🔗 Related Repositories
 
-**LLM Components**: [llm-components](../llm-components/) - Building blocks for LLM applications  
-**LLM Applications**: [llm-applications](../llm-applications/) - Full applications built with local LLMs
+**LLM Components**: [llm-components](https://github.com/Hannune/LLM-Components) - Building blocks for LLM applications  
+**LLM Applications**: [llm-applications](https://github.com/Hannune/LLM-Applications) - Full applications built with local LLMs
 
 ---
 
