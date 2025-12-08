@@ -1,4 +1,4 @@
-# Local LLM Infrastructure
+# LLM Infrastructure
 
 > **Production-grade infrastructure for running 70+ local LLM models with zero API costs**
 
