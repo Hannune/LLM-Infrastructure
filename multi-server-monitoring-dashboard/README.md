@@ -27,21 +27,14 @@ nano servers.yml  # Edit with your server details
 2. **Start with Docker:**
 ```bash
 docker compose up -d
-# SSH key is automatically generated and exported to ./ssh-keys/id_rsa.pub
 ```
 
-3. **Add SSH key to your servers:**
-```bash
-# Your public key is now in ./ssh-keys/id_rsa.pub
-ssh-copy-id -i ./ssh-keys/id_rsa.pub user@your-server-ip
-```
-
-4. **Access dashboard:**
+3. **Access dashboard:**
 ```
 http://localhost:8501
 ```
 
-✨ **New:** SSH keys are automatically generated and exported to `./ssh-keys/` directory!
+**Note:** The dashboard uses your host SSH keys from `~/.ssh/`. Make sure you have SSH key access configured to all your servers.
 
 📖 **Guides:**
 - **Simplified setup:** [EASY_SETUP.md](EASY_SETUP.md) ⭐ Start here!
@@ -306,23 +299,23 @@ See [AUTHENTICATION.md](AUTHENTICATION.md) for detailed instructions.
 
 ## What's New
 
+### v2.3 Updates (Latest)
+- ✅ **Optimized SSH connection stability** - Fixed random connection failures
+- ✅ **Improved performance** - Faster data collection with optimized timeouts
+- ✅ **Host SSH key support** - Uses existing host SSH keys
+- ✅ **Simplified deployment** - Cleaner entrypoint with less verbose output
+- ✅ **Grid layout** - Better UI for 10+ servers (4 per row)
+
 ### v2.2 Updates
 - ✅ **Password authentication** with bcrypt hashing
 - ✅ Secure login page
 - ✅ Optional authentication (can be disabled)
 
-### v2.1 Updates
-- ✅ Auto SSH key generation
-- ✅ Public key export to host
-
 ### v2.0 Updates
 - ✅ Docker Compose support for easy deployment
 - ✅ Fixed auto-refresh (non-blocking UI)
 - ✅ SSH key path expansion (supports `~/.ssh/`)
-- ✅ Countdown timer for next refresh
-- ✅ Last refresh timestamp display
 - ✅ Comprehensive documentation
-- ✅ Resource-efficient refresh mechanism
 
 ## License
 

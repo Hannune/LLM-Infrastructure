@@ -92,7 +92,7 @@ class ServerMonitor:
         return output
 
     def collect_all_data(self, server):
-        """Collect all monitoring data for a server"""
+        """Collect all monitoring data for a server using a single SSH connection"""
         data = {
             'server': server['name'],
             'host': server['host'],
@@ -105,28 +105,86 @@ class ServerMonitor:
             'docker': '',
             'last_updated': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-        
-        try:
-            # Test connection first
-            uptime = self.get_system_uptime(server)
-            if "Connection Error" in uptime:
-                data['status'] = '🔴 Offline'
-                data['uptime'] = uptime
-                return data
-            else:
-                data['status'] = '🟢 Online'
-                data['uptime'] = uptime.strip()
 
-            # Collect other data
-            data['cpu'] = self.get_cpu_info(server)
-            data['disk'] = self.get_disk_usage(server)
-            data['memory'] = self.get_memory_usage(server)
-            data['nvidia'] = self.get_nvidia_info(server)
-            data['docker'] = self.get_docker_containers(server)
-            
+        ssh = None
+        try:
+            # Small delay to avoid Paramiko race conditions
+            import random
+            time.sleep(random.uniform(0.01, 0.05))
+
+            # Use single SSH connection for all commands
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+            # Expand user path for SSH key
+            key_file = server.get('key_file')
+            if key_file:
+                key_file = os.path.expanduser(key_file)
+
+            # Connect with optimized timeout for speed
+            ssh.connect(
+                hostname=server['host'],
+                port=server.get('port', 22),
+                username=server['username'],
+                key_filename=key_file,
+                timeout=8,
+                banner_timeout=8,
+                auth_timeout=8,
+                look_for_keys=False,  # Only use specified key
+                allow_agent=False  # Don't use SSH agent (avoids hangs)
+            )
+
+            # Execute all commands in one batch for speed
+            commands = {
+                'uptime': 'uptime',
+                'cpu': "top -bn1 | grep 'Cpu(s)' | head -1",
+                'disk': 'df -h',
+                'memory': 'free -h',
+                'nvidia': 'nvidia-smi 2>/dev/null || echo "Not available"',
+                'docker': 'docker ps 2>/dev/null || echo "Not available"'
+            }
+
+            for key, command in commands.items():
+                try:
+                    # Use exec_command with proper channel handling
+                    stdin, stdout, stderr = ssh.exec_command(command, timeout=5)
+
+                    # Read output and wait for command to complete
+                    output = stdout.read().decode('utf-8', errors='ignore').strip()
+                    error_output = stderr.read().decode('utf-8', errors='ignore').strip()
+
+                    # Wait for channel to close properly
+                    stdout.channel.recv_exit_status()
+
+                    # If we got output, use it; otherwise check for errors
+                    if output:
+                        data[key] = output
+                    elif error_output and 'not found' not in error_output.lower():
+                        data[key] = f"Error: {error_output}"
+                    else:
+                        data[key] = "Not available"
+
+                except Exception as cmd_error:
+                    data[key] = f"Error: {str(cmd_error)}"
+
+            # Set status based on uptime
+            if data.get('uptime') and not data['uptime'].startswith('Error'):
+                data['status'] = '🟢 Online'
+            else:
+                data['status'] = '🔴 Offline'
+
         except Exception as e:
             data['status'] = f'🔴 Error: {str(e)}'
-        
+            data['uptime'] = f"Connection Error: {str(e)}"
+
+        finally:
+            # Always close SSH connection, even on error
+            if ssh is not None:
+                try:
+                    ssh.close()
+                except:
+                    pass  # Ignore errors during cleanup
+
         return data
 
 def check_password():
@@ -242,8 +300,11 @@ def main():
     # Collect data from all servers concurrently
     with st.spinner("Collecting data from servers..."):
         all_data = []
-        
-        with ThreadPoolExecutor(max_workers=len(monitor.servers)) as executor:
+
+        # Limit concurrent connections to avoid Paramiko race conditions
+        max_parallel = min(6, len(monitor.servers))
+
+        with ThreadPoolExecutor(max_workers=max_parallel) as executor:
             future_to_server = {
                 executor.submit(monitor.collect_all_data, server): server 
                 for server in monitor.servers

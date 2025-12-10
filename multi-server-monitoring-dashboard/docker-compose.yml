@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   dashboard:
     build: .
@@ -10,23 +8,21 @@ services:
       # Mount server configuration
       - ./servers.yml:/app/servers.yml:ro
 
-      # SSH keys - OPTION 1: Create new keys in volume
-      - ssh-keys:/root/.ssh
+      # SSH keys - Use existing host keys
+      - ~/.ssh:/root/.ssh:ro
 
-      # Export public key to host (for easy access)
-      - ./ssh-keys:/ssh-keys-export
-
-      # SSH keys - OPTION 2: Use existing keys (uncomment and comment above)
-      # - ~/.ssh:/root/.ssh:ro
+      # Mount test scripts
+      - ./quick_test.py:/app/quick_test.py:ro
+      - ./debug_performance.py:/app/debug_performance.py:ro
 
     restart: unless-stopped
 
     networks:
       - monitoring
 
-    # Load environment variables from .env file
     env_file:
-      - .env
+      - path: .env
+        required: false
 
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
@@ -42,10 +38,6 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
-
-volumes:
-  ssh-keys:
-    driver: local
 
 networks:
   monitoring:
