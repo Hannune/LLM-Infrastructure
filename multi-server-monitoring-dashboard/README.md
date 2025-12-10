@@ -10,11 +10,45 @@ Monitor CPU, memory, disk, GPU (NVIDIA), and Docker containers across your fleet
 - **GPU Monitoring** - NVIDIA GPU usage and temperature
 - **Docker Container Status** - Track running LLM containers
 - **SSH-Based** - Secure key-based authentication
-- **Auto-Refresh** - Configurable polling intervals
+- **Auto SSH Key Generation** - Keys generated and exported automatically
+- **Smart Auto-Refresh** - Non-blocking UI with configurable intervals
 - **Concurrent Collection** - Fast parallel data gathering
+- **Docker Support** - Easy deployment with Docker Compose
 - **100% Local** - No cloud dependencies
 
-## Quick Start
+## Quick Start (Docker - Recommended)
+
+1. **Configure servers:**
+```bash
+cp servers.example.yml servers.yml
+nano servers.yml  # Edit with your server details
+```
+
+2. **Start with Docker:**
+```bash
+docker compose up -d
+# SSH key is automatically generated and exported to ./ssh-keys/id_rsa.pub
+```
+
+3. **Add SSH key to your servers:**
+```bash
+# Your public key is now in ./ssh-keys/id_rsa.pub
+ssh-copy-id -i ./ssh-keys/id_rsa.pub user@your-server-ip
+```
+
+4. **Access dashboard:**
+```
+http://localhost:8501
+```
+
+✨ **New:** SSH keys are automatically generated and exported to `./ssh-keys/` directory!
+
+📖 **Guides:**
+- **Simplified setup:** [EASY_SETUP.md](EASY_SETUP.md) ⭐ Start here!
+- **Detailed walkthrough:** [SETUP_CHECKLIST.md](SETUP_CHECKLIST.md)
+- **Complete guide:** [DEPLOYMENT.md](DEPLOYMENT.md)
+
+## Alternative: Native Python Setup
 
 1. **Install dependencies:**
 ```bash
@@ -24,26 +58,18 @@ pip install -r requirements.txt
 2. **Configure servers:**
 ```bash
 cp servers.example.yml servers.yml
-# Edit servers.yml with your server details
+nano servers.yml
 ```
 
 3. **Setup SSH keys:**
 ```bash
-# Generate SSH key if you don't have one
 ssh-keygen -t rsa -b 4096
-
-# Copy key to servers
 ssh-copy-id user@server-ip
 ```
 
-4. **Run dashboard:**
+4. **Run:**
 ```bash
 streamlit run app.py
-```
-
-5. **Access dashboard:**
-```
-http://localhost:8501
 ```
 
 ## Configuration
@@ -97,10 +123,20 @@ ssh -i ~/.ssh/id_rsa user@server-ip
 
 ## Usage
 
-### Auto-Refresh
-Enable auto-refresh from the sidebar:
-- Check "Auto Refresh"
-- Set refresh interval (30-300 seconds)
+### Auto-Refresh (Improved)
+Smart auto-refresh with non-blocking UI:
+- **Enable:** Check "Auto Refresh" in sidebar
+- **Configure:** Set interval (30-300 seconds)
+- **Monitor:** Shows countdown timer and last refresh time
+- **Efficient:** Only connects to servers at intervals (not continuously)
+- **Secure:** Connections closed immediately after data collection
+- **Non-blocking:** UI remains responsive during refresh cycle
+
+**Benefits over simple refresh:**
+- ✅ No UI freezing
+- ✅ Resource-efficient (SSH connections only when needed)
+- ✅ Secure (no persistent connections)
+- ✅ Visual feedback (countdown timer)
 
 ### Manual Refresh
 Click "Refresh Now" button in sidebar
@@ -134,22 +170,59 @@ Monitor development servers:
 - Monitor Docker container health
 - Check system availability
 
+## Docker Deployment
+
+### Management Commands
+
+```bash
+# Start
+docker compose up -d
+
+# Stop
+docker compose down
+
+# View logs
+docker compose logs -f
+
+# Restart
+docker compose restart
+
+# Rebuild after updates
+docker compose up -d --build
+```
+
+### Volume Persistence
+
+SSH keys are stored in a Docker volume for persistence:
+```bash
+# Backup SSH keys
+docker compose exec dashboard tar czf - /root/.ssh > ssh-backup.tar.gz
+
+# View volume
+docker volume inspect multi-server-monitoring-dashboard_ssh-keys
+```
+
 ## Architecture
 
 ```
-┌──────────────────┐
-│   Streamlit      │
-│   Dashboard      │ :8501
-└────────┬─────────┘
-         │ SSH (Paramiko)
-    ┌────┴────┬──────────┬──────────┐
-    │         │          │          │
-┌───▼───┐ ┌──▼──┐  ┌────▼────┐ ┌───▼────┐
-│Server1│ │Srv2 │  │Server 3 │ │Server 4│
-│+ GPU  │ │+GPU │  │  + GPU  │ │  +GPU  │
-│+Docker│ │+Dock│  │ +Docker │ │ +Docker│
-└───────┘ └─────┘  └─────────┘ └────────┘
-  LOCAL    LOCAL      LOCAL      LOCAL
+┌──────────────────────────┐
+│   Docker Container       │
+│  ┌──────────────────┐    │
+│  │   Streamlit      │    │
+│  │   Dashboard      │:8501├─── Port 8501 → localhost:8501
+│  └────────┬─────────┘    │
+│           │ SSH Keys     │
+│      /root/.ssh/         │
+└───────────┼──────────────┘
+            │ SSH (Paramiko)
+       ┌────┴────┬──────────┬──────────┐
+       │         │          │          │
+   ┌───▼───┐ ┌──▼──┐  ┌────▼────┐ ┌───▼────┐
+   │Server1│ │Srv2 │  │Server 3 │ │Server 4│
+   │+ GPU  │ │+GPU │  │  + GPU  │ │  +GPU  │
+   │+Docker│ │+Dock│  │ +Docker │ │ +Docker│
+   └───────┘ └─────┘  └─────────┘ └────────┘
+     LOCAL    LOCAL      LOCAL      LOCAL
 ```
 
 ## Troubleshooting
@@ -186,11 +259,29 @@ streamlit run app.py
 
 ## Security Considerations
 
-1. **SSH Keys** - Use strong SSH keys (4096-bit RSA)
-2. **Key Permissions** - Ensure keys are chmod 600
-3. **Firewall** - Restrict SSH access to known IPs
-4. **Local Network** - Best used within private network
-5. **No Root Access** - Don't use root user for monitoring
+1. **Password Protection** - Enable authentication for production (see [AUTHENTICATION.md](AUTHENTICATION.md))
+2. **SSH Keys** - Use strong SSH keys (4096-bit RSA)
+3. **Key Permissions** - Ensure keys are chmod 600
+4. **Firewall** - Restrict SSH access to known IPs
+5. **HTTPS** - Use reverse proxy with SSL for production
+6. **Local Network** - Best used within private network
+7. **No Root Access** - Don't use root user for monitoring
+
+### Setting Up Password Protection
+
+```bash
+# Generate password hash
+python3 generate_password_hash.py
+
+# Add to .env file
+cp .env.example .env
+nano .env  # Add DASHBOARD_PASSWORD_HASH=...
+
+# Restart
+docker compose restart
+```
+
+See [AUTHENTICATION.md](AUTHENTICATION.md) for detailed instructions.
 
 ## Requirements
 
@@ -205,6 +296,33 @@ streamlit run app.py
 - Concurrent data collection using ThreadPoolExecutor
 - Fast updates even with 10+ servers
 - Minimal resource usage (~50MB RAM)
+
+## Documentation
+
+- **[AUTHENTICATION.md](AUTHENTICATION.md)** - Password protection setup
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Complete deployment walkthrough
+- **[SSH_SETUP.md](SSH_SETUP.md)** - Detailed SSH key setup guide
+- **[DOCKER_SETUP.md](DOCKER_SETUP.md)** - Docker-specific instructions
+
+## What's New
+
+### v2.2 Updates
+- ✅ **Password authentication** with bcrypt hashing
+- ✅ Secure login page
+- ✅ Optional authentication (can be disabled)
+
+### v2.1 Updates
+- ✅ Auto SSH key generation
+- ✅ Public key export to host
+
+### v2.0 Updates
+- ✅ Docker Compose support for easy deployment
+- ✅ Fixed auto-refresh (non-blocking UI)
+- ✅ SSH key path expansion (supports `~/.ssh/`)
+- ✅ Countdown timer for next refresh
+- ✅ Last refresh timestamp display
+- ✅ Comprehensive documentation
+- ✅ Resource-efficient refresh mechanism
 
 ## License
 

@@ -1,0 +1,10 @@
+*.md
+.git
+.gitignore
+servers.yml
+ssh-keys/
+*.pyc
+__pycache__
+.env
+*.log
+.DS_Store
