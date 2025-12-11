@@ -1,0 +1,15 @@
+# Environment variables
+.env
+
+# WireGuard configuration files (contain sensitive keys)
+config/
+*.conf
+
+# Client configuration files
+client*.conf
+
+# Private and public keys
+*.key
+
+# WireGuard parameters
+params
