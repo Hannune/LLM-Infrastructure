@@ -90,12 +90,30 @@ Patch for vLLM enabling Marlin kernels for GPTQ-quantized models. Dramatically i
 
 ---
 
+### 🔒 [vpn-wireguard](./vpn-wireguard/)
+**Secure VPN server for remote LLM infrastructure access**
+
+Dockerized WireGuard VPN server with automatic client configuration, QR code generation, and easy client management. Connect securely to your LLM infrastructure from anywhere.
+
+**Features:**
+- Auto-detection of public IP
+- One-command client creation
+- QR codes for mobile devices
+- Persistent configuration storage
+
+**Use Case**: Secure remote access to LLM servers, multi-location deployments
+
+---
+
 ## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                   Your Application                      │
 └────────────────────┬────────────────────────────────────┘
+                     │
+                     │  🔒 Optional: WireGuard VPN
+                     │     (Secure remote access)
                      │
             ┌────────▼─────────┐
             │  LiteLLM Gateway │  ← Unified API, load balancing
